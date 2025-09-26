@@ -1,0 +1,5 @@
+{
+  "name": "Copy of AI Rental Finder",
+  "description": "An AI-powered application to find rental properties across various online platforms. Users can specify their search criteria, and the app will intelligently search leading rental sites, classifieds, and marketplaces to return a comprehensive list of available properties.",
+  "requestFramePermissions": []
+}
