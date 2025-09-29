@@ -47,7 +47,11 @@ const App: React.FC = () => {
       setResults(properties);
     } catch (err) {
       console.error(err);
-      setError('An error occurred while fetching rental properties. Please try again.');
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('An unknown error occurred. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
