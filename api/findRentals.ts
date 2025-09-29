@@ -31,16 +31,16 @@ export default async function handler(request: VercelRequest, response: VercelRe
     const housingTypeClause = criteria.housingType === 'any' ? '' : ` The housing type should be a ${criteria.housingType}.`;
 
     const prompt = `
-      Act as an expert rental property search engine.
-      Find up to 20 rental properties that match the following criteria:
-      - Location: near ${criteria.location}
+      Generate a list of up to 15 fictional, but realistic, rental properties that match the following criteria.
+      The data should be plausible for the requested location.
+      - Location: ${criteria.location}
       - Price Range: between $${criteria.minPrice} and $${criteria.maxPrice} per month
       - Bedrooms: ${criteria.bedrooms}
       - Bathrooms: ${criteria.bathrooms}
       ${housingTypeClause}
 
-      Search across a wide variety of sources including major rental sites like Zillow, Trulia, Rent.com, Apartments.com, as well as more disparate sources like Craigslist, Facebook Marketplace, and local classifieds.
-      Return the results as a list of rental properties.
+      For each property, provide a realistic-sounding title, price, location, source (like 'Zillow' or 'Apartments.com'), and a placeholder URL (e.g., 'https://example.com/listing/123').
+      Do not add any commentary or introductory text before or after the JSON list.
     `;
 
     const geminiResponse = await ai.models.generateContent({
@@ -52,8 +52,13 @@ export default async function handler(request: VercelRequest, response: VercelRe
       },
     });
     
-    // With responseSchema, the output is guaranteed to be a parsable JSON string.
-    const properties = JSON.parse(geminiResponse.text);
+    // The response text is a JSON string. Add robust parsing to handle potential markdown wrappers.
+    let jsonText = geminiResponse.text.trim();
+    if (jsonText.startsWith('```json')) {
+      jsonText = jsonText.slice(7, -3).trim();
+    }
+    
+    const properties = JSON.parse(jsonText);
     
     response.status(200).json(properties);
 
