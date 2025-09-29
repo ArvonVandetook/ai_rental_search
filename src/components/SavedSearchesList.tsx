@@ -1,4 +1,3 @@
-
 import React from 'react';
 import type { SavedSearch } from '../types';
 import { TrashIcon, LoadIcon } from './icons';

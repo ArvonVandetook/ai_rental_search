@@ -1,4 +1,3 @@
-
 export interface SearchCriteria {
   location: string;
   minPrice: string;
