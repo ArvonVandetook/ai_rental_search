@@ -1,3 +1,4 @@
+
 import type { SearchCriteria, RentalProperty } from '../types';
 
 // This function now calls our own backend proxy (the Vercel serverless function)
