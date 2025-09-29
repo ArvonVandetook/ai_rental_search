@@ -1,15 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { SearchCriteria } from '../types';
 
 interface SearchFormProps {
-  criteria: SearchCriteria;
-  setCriteria: React.Dispatch<React.SetStateAction<SearchCriteria>>;
-  onSearch: () => void;
+  initialCriteria: SearchCriteria;
+  onSearch: (criteria: SearchCriteria) => void;
   onSave: () => void;
   isLoading: boolean;
+  isSaving: boolean;
 }
 
-export const SearchForm: React.FC<SearchFormProps> = ({ criteria, setCriteria, onSearch, onSave, isLoading }) => {
+export const SearchForm: React.FC<SearchFormProps> = ({ initialCriteria, onSearch, onSave, isLoading, isSaving }) => {
+  const [criteria, setCriteria] = useState<SearchCriteria>(initialCriteria);
+
+  React.useEffect(() => {
+    setCriteria(initialCriteria);
+  }, [initialCriteria]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setCriteria(prev => ({ ...prev, [name]: value }));
@@ -17,8 +23,13 @@ export const SearchForm: React.FC<SearchFormProps> = ({ criteria, setCriteria, o
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSearch();
+    onSearch(criteria);
   };
+  
+  const handleSave = () => {
+    onSearch(criteria); // Ensure the app state has the latest criteria before saving
+    onSave();
+  }
 
   return (
     <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -121,11 +132,15 @@ export const SearchForm: React.FC<SearchFormProps> = ({ criteria, setCriteria, o
         </button>
         <button
           type="button"
-          onClick={onSave}
-          disabled={isLoading}
-          className="w-full sm:w-auto justify-center py-3 px-4 border border-slate-300 rounded-md shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-slate-200 disabled:cursor-not-allowed transition-colors"
+          onClick={handleSave}
+          disabled={isLoading || isSaving}
+          className={`w-full sm:w-auto justify-center py-3 px-4 border rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${
+            isSaving
+              ? 'bg-green-500 border-green-500 text-white cursor-default'
+              : 'border-slate-300 text-slate-700 bg-white hover:bg-slate-50 focus:ring-indigo-500 disabled:bg-slate-200 disabled:cursor-not-allowed'
+          }`}
         >
-          Save Search
+          {isSaving ? 'Saved!' : 'Save Search'}
         </button>
       </div>
     </form>

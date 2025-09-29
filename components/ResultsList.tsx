@@ -1,4 +1,3 @@
-
 import React from 'react';
 import type { RentalProperty } from '../types';
 import { PropertyCard } from './PropertyCard';
@@ -27,15 +26,16 @@ export const ResultsList: React.FC<ResultsListProps> = ({ properties, isLoading,
   if (error) {
     return <div className="text-center py-12 text-red-600 bg-red-50 p-6 rounded-lg">{error}</div>;
   }
-
+  
+  // Render this only after a search has been attempted and returned no results.
   if (properties.length === 0 && !isLoading) {
     return (
        <div className="text-center py-12 bg-white rounded-lg shadow-md">
         <div className="flex justify-center mb-4">
           <EmptyStateIcon />
         </div>
-        <h3 className="text-lg font-semibold text-slate-700">No results yet</h3>
-        <p className="text-slate-500 mt-1">Use the form above to start your search.</p>
+        <h3 className="text-lg font-semibold text-slate-700">No Results Found</h3>
+        <p className="text-slate-500 mt-1">Try adjusting your search criteria.</p>
       </div>
     );
   }

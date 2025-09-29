@@ -1,4 +1,3 @@
-
 import React from 'react';
 import type { RentalProperty } from '../types';
 import { BedIcon, BathIcon, LocationIcon, ExternalLinkIcon, HeartIcon, HeartSolidIcon } from './icons';

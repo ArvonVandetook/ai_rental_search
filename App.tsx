@@ -21,6 +21,7 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);
   const [favorites, setFavorites] = useState<RentalProperty[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     try {
@@ -37,26 +38,33 @@ const App: React.FC = () => {
     }
   }, []);
 
-  const handleSearch = useCallback(async () => {
+  const handleSearch = useCallback(async (criteria: SearchCriteria) => {
+    setSearchCriteria(criteria);
     setIsLoading(true);
     setError(null);
     setResults([]);
     try {
-      const properties = await findRentals(searchCriteria);
+      const properties = await findRentals(criteria);
       setResults(properties);
     } catch (err) {
       console.error(err);
-      setError('An error occurred while fetching rental properties. Please try again.');
+       if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('An unknown error occurred while fetching rental properties.');
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [searchCriteria]);
+  }, []);
 
   const handleSaveSearch = () => {
     const newSearch: SavedSearch = { ...searchCriteria, id: Date.now() };
     const updatedSearches = [...savedSearches, newSearch];
     setSavedSearches(updatedSearches);
     localStorage.setItem('rental-finder-searches', JSON.stringify(updatedSearches));
+    setIsSaving(true);
+    setTimeout(() => setIsSaving(false), 2000);
   };
 
   const handleDeleteSearch = (id: number) => {
@@ -68,6 +76,7 @@ const App: React.FC = () => {
   const handleLoadSearch = (search: SavedSearch) => {
     const { id, ...criteria } = search;
     setSearchCriteria(criteria);
+    handleSearch(criteria);
   };
 
   const handleToggleFavorite = (property: RentalProperty) => {
@@ -99,25 +108,28 @@ const App: React.FC = () => {
             <h2 className="text-xl font-semibold mb-4 text-slate-700">Find your next home</h2>
             <p className="text-slate-500 mb-6">Enter your criteria below and our AI will search across dozens of platforms to find the perfect rental for you.</p>
             <SearchForm
-              criteria={searchCriteria}
-              setCriteria={setSearchCriteria}
+              initialCriteria={searchCriteria}
               onSearch={handleSearch}
               onSave={handleSaveSearch}
               isLoading={isLoading}
+              isSaving={isSaving}
             />
           </div>
           
-          <SavedSearchesList 
-            searches={savedSearches}
-            onLoad={handleLoadSearch}
-            onDelete={handleDeleteSearch}
-          />
-
-          <FavoritesList 
-            favorites={favorites}
-            onToggleFavorite={handleToggleFavorite}
-          />
-
+          {(savedSearches.length > 0 || favorites.length > 0) && (
+             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <SavedSearchesList 
+                    searches={savedSearches}
+                    onLoad={handleLoadSearch}
+                    onDelete={handleDeleteSearch}
+                />
+                <FavoritesList 
+                    favorites={favorites}
+                    onToggleFavorite={handleToggleFavorite}
+                />
+             </div>
+          )}
+          
           <ResultsList 
             properties={results} 
             isLoading={isLoading} 

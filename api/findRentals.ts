@@ -68,10 +68,10 @@ export default async function handler(request: VercelRequest, response: VercelRe
     });
     console.log("Gemini API call successful.");
     
-    let jsonText = geminiResponse.text.trim();
-    if (jsonText.startsWith('```json')) {
-      jsonText = jsonText.slice(7, -3).trim();
-    }
+    // FIX: Removed unnecessary markdown stripping. With `responseMimeType: "application/json"`
+    // and a `responseSchema`, the API should return a clean JSON string, making this
+    // defensive code redundant. The outer try/catch block will handle any parsing errors.
+    const jsonText = geminiResponse.text.trim();
     
     const properties = JSON.parse(jsonText);
     
