@@ -8,9 +8,10 @@ interface SearchFormProps {
   onSearch: () => void;
   onSave: () => void;
   isLoading: boolean;
+  isSaving: boolean;
 }
 
-export const SearchForm: React.FC<SearchFormProps> = ({ criteria, setCriteria, onSearch, onSave, isLoading }) => {
+export const SearchForm: React.FC<SearchFormProps> = ({ criteria, setCriteria, onSearch, onSave, isLoading, isSaving }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setCriteria(prev => ({ ...prev, [name]: value }));
@@ -20,6 +21,10 @@ export const SearchForm: React.FC<SearchFormProps> = ({ criteria, setCriteria, o
     e.preventDefault();
     onSearch();
   };
+
+  const saveButtonClasses = isSaving
+    ? 'bg-green-100 text-green-700 border-green-300 cursor-default'
+    : 'text-slate-700 bg-white hover:bg-slate-50 border-slate-300';
 
   return (
     <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -123,10 +128,10 @@ export const SearchForm: React.FC<SearchFormProps> = ({ criteria, setCriteria, o
         <button
           type="button"
           onClick={onSave}
-          disabled={isLoading}
-          className="w-full sm:w-auto justify-center py-3 px-4 border border-slate-300 rounded-md shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-slate-200 disabled:cursor-not-allowed transition-colors"
+          disabled={isLoading || isSaving}
+          className={`w-full sm:w-auto justify-center py-3 px-4 border rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-slate-200 disabled:cursor-not-allowed transition-colors ${saveButtonClasses}`}
         >
-          Save Search
+          {isSaving ? 'Saved!' : 'Save Search'}
         </button>
       </div>
     </form>

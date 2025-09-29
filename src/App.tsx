@@ -19,6 +19,7 @@ const App: React.FC = () => {
   });
   const [results, setResults] = useState<RentalProperty[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);
   const [favorites, setFavorites] = useState<RentalProperty[]>([]);
@@ -58,10 +59,15 @@ const App: React.FC = () => {
   }, [searchCriteria]);
 
   const handleSaveSearch = () => {
+    setIsSaving(true);
     const newSearch: SavedSearch = { ...searchCriteria, id: Date.now() };
     const updatedSearches = [...savedSearches, newSearch];
     setSavedSearches(updatedSearches);
     localStorage.setItem('rental-finder-searches', JSON.stringify(updatedSearches));
+
+    setTimeout(() => {
+        setIsSaving(false);
+    }, 2000);
   };
 
   const handleDeleteSearch = (id: number) => {
@@ -109,6 +115,7 @@ const App: React.FC = () => {
               onSearch={handleSearch}
               onSave={handleSaveSearch}
               isLoading={isLoading}
+              isSaving={isSaving}
             />
           </div>
           
