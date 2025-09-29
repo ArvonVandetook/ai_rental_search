@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import type { SearchCriteria, RentalProperty, SavedSearch } from './types';
 import { findRentals } from './services/geminiService';
