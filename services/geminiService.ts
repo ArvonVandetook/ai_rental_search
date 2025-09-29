@@ -17,7 +17,14 @@ export const findRentals = async (criteria: SearchCriteria): Promise<RentalPrope
 
     Search across a wide variety of sources including major rental sites like Zillow, Trulia, Rent.com, Apartments.com, as well as more disparate sources like Craigslist, Facebook Marketplace, and local classifieds.
     
-    IMPORTANT: Provide your response as a single, clean JSON array of objects and nothing else. Each object must represent a property and include a title, price, number of bedrooms and bathrooms, location, the source of the listing (e.g., "Zillow", "Craigslist"), and a direct URL to the live listing.
+    IMPORTANT: Provide your response as a single, clean JSON array of objects and nothing else. Each object must represent a property and include the following fields:
+    - title (string)
+    - price (string, e.g., "$2,500")
+    - bedrooms (number)
+    - bathrooms (number)
+    - location (string)
+    - source (string, e.g., "Zillow", "Craigslist")
+    - url (string, a direct URL to the live listing)
   `;
 
   try {
@@ -46,7 +53,12 @@ export const findRentals = async (criteria: SearchCriteria): Promise<RentalPrope
     
     try {
       const properties = JSON.parse(jsonString) as RentalProperty[];
-      return properties;
+      // Post-process to ensure data types are correct, as the model can be inconsistent.
+      return properties.map(p => ({
+        ...p,
+        bedrooms: Number(p.bedrooms) || 0,
+        bathrooms: Number(p.bathrooms) || 0,
+      }));
     } catch (parseError) {
       console.error("Failed to parse extracted JSON. String was:", jsonString);
       console.error("Parse Error:", parseError);
