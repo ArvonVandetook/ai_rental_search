@@ -20,6 +20,12 @@ const schema = {
 };
 
 export default async function handler(request: VercelRequest, response: VercelResponse) {
+  // Explicitly check if the API key is configured on the server.
+  if (!process.env.API_KEY) {
+    console.error("Server configuration error: API_KEY is not set.");
+    return response.status(500).json({ message: "Server configuration error: The API_KEY environment variable is not set. Please check your Vercel project settings." });
+  }
+
   if (request.method !== 'POST') {
     return response.status(405).json({ message: 'Only POST requests are allowed' });
   }
