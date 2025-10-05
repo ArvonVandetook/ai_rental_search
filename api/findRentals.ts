@@ -40,15 +40,36 @@ export default async function handler(request: VercelRequest, response: VercelRe
 
     const ai = new GoogleGenerativeAI(process.env.API_KEY as string);
 
-    // --- TEMPORARY ADDITION: LIST AVAILABLE MODELS ---
-    console.log("Attempting to list available Generative AI models...");
-    const { models } = await ai.listModels();
-    const modelNames = models.map(model => ({
-      name: model.name,
-      supportedMethods: model.supportedGenerationMethods,
-      version: model.version
-    }));
-    console.log("Available Models:", JSON.stringify(modelNames, null, 2));
+    // --- TEMPORARY ADDITION: LIST AVAILABLE MODELS (Modified to static call) ---
+    console.log("Attempting to list available Generative AI models using static call...");
+    // Use the class directly and pass the API key to its listModels method if it's static
+    // Or, if listModels is truly meant to be on the instance 'ai', then the previous code was correct.
+    // Let's try this to rule out type inference issues.
+    let modelsList;
+    try {
+        const genAI = new GoogleGenerativeAI(process.env.API_KEY as string);
+        const { models } = await genAI.listModels(); // Using the instance, but re-declaring to ensure context
+        modelsList = models.map(model => ({
+            name: model.name,
+            supportedMethods: model.supportedGenerationMethods,
+            version: model.version
+        }));
+        console.log("Available Models (via new instance):", JSON.stringify(modelsList, null, 2));
+    } catch (listError) {
+        console.error("Error listing models:", listError);
+        // Fallback to original ai instance if the above fails, or log more details
+        try {
+            const { models } = await ai.listModels(); // Try the original way too, just in case
+            modelsList = models.map(model => ({
+                name: model.name,
+                supportedMethods: model.supportedGenerationMethods,
+                version: model.version
+            }));
+            console.log("Available Models (via original instance, in fallback):", JSON.stringify(modelsList, null, 2));
+        } catch (originalListError) {
+            console.error("Error listing models via original instance:", originalListError);
+        }
+    }
     // --- END TEMPORARY ADDITION ---
 
     const housingTypeClause = criteria.housingType === 'any' ? '' : ` The housing type should be a ${criteria.housingType}.`;
