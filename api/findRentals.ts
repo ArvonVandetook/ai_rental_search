@@ -36,22 +36,23 @@ export default async function handler(request: VercelRequest, response: VercelRe
 
     const ai = new GoogleGenerativeAI(process.env.API_KEY as string);
 
-    // --- NEW DEBUGGING CODE START ---
+    // --- REVISED DEBUGGING CODE START ---
     console.log("Attempting to list available models...");
     try {
-      const { models } = await ai.listModels();
+      // Cast 'ai' to 'any' to bypass strict TypeScript checking for listModels for debugging
+      const { models } = await (ai as any).listModels();
       console.log("Successfully listed models:");
       for (const model of models) {
-        console.log(`- ${model.name} (supports generateContent: ${model.supportedGenerationMethods?.includes('generateContent')})`);
+        // Ensure supportedGenerationMethods is checked for existence before calling includes
+        const supportsGenerateContent = model.supportedGenerationMethods?.includes('generateContent') || false;
+        console.log(`- ${model.name} (supports generateContent: ${supportsGenerateContent})`);
       }
-      // If listModels works, but generateContent fails, we'll need to examine the logs closely.
-      // If listModels also fails, then the API_KEY or basic connection is the problem.
     } catch (listError) {
       console.error("Failed to list models. This indicates a fundamental API key or connection issue:", listError);
       return response.status(500).json({ message: `Failed to list models: ${listError instanceof Error ? listError.message : String(listError)}` });
     }
     console.log("Finished listing models.");
-    // --- NEW DEBUGGING CODE END ---
+    // --- REVISED DEBUGGING CODE END ---
 
 
     const criteria = request.body;
@@ -74,7 +75,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
 
     console.log("Calling Gemini API with gemini-1.0-pro...");
     const model = ai.getGenerativeModel({
-      model: "gemini-1.0-pro", // Keep this for now, we'll confirm its availability
+      model: "gemini-1.0-pro",
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: schema as any
