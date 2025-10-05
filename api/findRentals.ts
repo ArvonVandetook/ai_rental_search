@@ -1,19 +1,19 @@
-import { GoogleGenerativeAI, Type } from "@google/generative-ai"; // Corrected import from GoogleGenAI to GoogleGenerativeAI
+import { GoogleGenerativeAI } from "@google/generative-ai"; // Removed 'Type' as it's not exported this way
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 // Define the schema for the AI's response to ensure consistent JSON output.
 const schema = {
-  type: array,
+  type: "array", // Corrected: "array" as a string literal
   items: {
-    type: object,
+    type: "object", // Corrected: "object" as a string literal
     properties: {
-      title: { type: string },
-      price: { type: string },
-      bedrooms: { type: number },
-      bathrooms: { type: number },
-      location: { type: string },
-      source: { type: string },
-      url: { type: string },
+      title: { type: "string" }, // Corrected: "string" as a string literal
+      price: { type: "string" }, // Corrected: "string" as a string literal
+      bedrooms: { type: "number" }, // Corrected: "number" as a string literal
+      bathrooms: { type: "number" }, // Corrected: "number" as a string literal
+      location: { type: "string" }, // Corrected: "string" as a string literal
+      source: { type: "string" }, // Corrected: "string" as a string literal
+      url: { type: "string" }, // Corrected: "string" as a string literal
     },
     required: ['title', 'price', 'bedrooms', 'bathrooms', 'location', 'source', 'url'],
   },
@@ -34,14 +34,13 @@ export default async function handler(request: VercelRequest, response: VercelRe
     if (!process.env.API_KEY) {
       console.error("API_KEY not found in environment variables.");
       return response.status(500).json({ message: "Server configuration error: The API_KEY environment variable is not set. Please check your Vercel project settings." });
-    } // CORRECTED: Removed extra '}' here.
+    }
     console.log("API key check passed.");
 
     const criteria = request.body;
     console.log("Received criteria:", criteria);
 
-    // Corrected import: GoogleGenerativeAI instead of GoogleGenAI
-    const ai = new GoogleGenerativeAI(process.env.API_KEY as string); // API key is passed directly to the constructor
+    const ai = new GoogleGenerativeAI(process.env.API_KEY as string);
 
     const housingTypeClause = criteria.housingType === 'any' ? '' : ` The housing type should be a ${criteria.housingType}.`;
 
@@ -59,20 +58,18 @@ export default async function handler(request: VercelRequest, response: VercelRe
     `;
 
     console.log("Calling Gemini API...");
-    const model = ai.getGenerativeModel({ model: "gemini-1.5-flash", generationConfig: { responseMimeType: "application/json", responseSchema: schema } }); // Updated model usage
-    const geminiResponse = await model.generateContent(prompt); // Removed 'contents' property, passed prompt directly
+    const model = ai.getGenerativeModel({ model: "gemini-1.5-flash", generationConfig: { responseMimeType: "application/json", responseSchema: schema } });
+    const geminiResponse = await model.generateContent(prompt);
     console.log("Gemini API call successful.");
 
-    // Removed the nested try block, relying on the outer try-catch for robustness.
-    // Also applied the nullish coalescing operator for 'text' property.
     const responseContent = await geminiResponse.response.text() ?? '';
 
-    if (!responseContent) { // Check if it's undefined or empty
+    if (!responseContent) {
       console.error("Gemini response text was empty or undefined.");
       return response.status(500).json({ message: "AI did not return any text content." });
     }
 
-    const jsonText = responseContent.trim(); // Now safely trim it
+    const jsonText = responseContent.trim();
     const properties = JSON.parse(jsonText);
     console.log("Parsed Properties:", JSON.stringify(properties, null, 2));
     console.log("First Property URL:", properties.length > 0 ? properties[0].url : "No properties found or no URL property on first.");
@@ -80,7 +77,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
     console.log("SUCCESSFULLY parsed properties. Sending response.");
     return response.status(200).json(properties);
 
-  } catch (error) { // This is the catch block for the entire function
+  } catch (error) {
     console.error("[CRITICAL] Unhandled error in serverless function:", error);
     const errorMessage = error instanceof Error ? error.message : "An unknown internal server error occurred.";
     return response.status(500).json({ message: `The server encountered a critical error: ${errorMessage}` });
