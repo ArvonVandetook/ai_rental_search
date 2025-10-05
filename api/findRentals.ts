@@ -59,7 +59,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
     // The key here is to cast the schema to 'any' or specifically match the SDK's expected type.
     // Let's try casting to `any` first to see if it bypasses the type checker.
     const model = ai.getGenerativeModel({
-      model: "gemini-pro",
+      model: "gemini-1.0-pro",
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: schema as any // <-- Add 'as any' here temporarily
