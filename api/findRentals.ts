@@ -84,7 +84,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
      // You can throw an error here to catch it in the outer block,
      // or return an appropriate response for an empty AI reply.
      return response.status(500).json({ message: "AI did not return any text content." });
-   }
+   
 
    const jsonText = responseContent.trim(); // Now safely trim it
    const properties = JSON.parse(jsonText);
