@@ -70,7 +70,6 @@ export default async function handler(request: VercelRequest, response: VercelRe
     
 // ... (previous code)
 
-});
 
  console.log("Gemini API call successful.");
  // FIX: Removed unnecessary markdown stripping. With `responseMimeType: "application/json"`
