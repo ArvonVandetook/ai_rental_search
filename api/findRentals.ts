@@ -2,8 +2,6 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 // Define the schema for the AI's response to ensure consistent JSON output.
-// We'll keep this 'schema' object for reference and for future, more robust structured output
-// if needed, but it won't be directly passed as 'responseSchema' to the generationConfig for now.
 const schema = {
   type: "array",
   items: {
@@ -42,6 +40,17 @@ export default async function handler(request: VercelRequest, response: VercelRe
 
     const ai = new GoogleGenerativeAI(process.env.API_KEY as string);
 
+    // --- TEMPORARY ADDITION: LIST AVAILABLE MODELS ---
+    console.log("Attempting to list available Generative AI models...");
+    const { models } = await ai.listModels();
+    const modelNames = models.map(model => ({
+      name: model.name,
+      supportedMethods: model.supportedGenerationMethods,
+      version: model.version
+    }));
+    console.log("Available Models:", JSON.stringify(modelNames, null, 2));
+    // --- END TEMPORARY ADDITION ---
+
     const housingTypeClause = criteria.housingType === 'any' ? '' : ` The housing type should be a ${criteria.housingType}.`;
 
     const prompt = `
@@ -72,7 +81,6 @@ export default async function handler(request: VercelRequest, response: VercelRe
       model: "gemini-1.0-pro",
       generationConfig: {
         responseMimeType: "application/json",
-        // REMOVED: responseSchema is no longer a direct property of GenerationConfig
       }
     });
     const geminiResponse = await model.generateContent(prompt);
