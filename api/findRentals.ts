@@ -2,6 +2,8 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 // Define the schema for the AI's response to ensure consistent JSON output.
+// We'll keep this 'schema' object for reference and for future, more robust structured output
+// if needed, but it won't be directly passed as 'responseSchema' to the generationConfig for now.
 const schema = {
   type: "array",
   items: {
@@ -52,15 +54,25 @@ export default async function handler(request: VercelRequest, response: VercelRe
       ${housingTypeClause}
 
       For each property, provide a realistic-sounding title, price, location, source (like 'Zillow' or 'Apartments.com'), and a placeholder URL (e.g., 'https://example.com/listing/123').
+      The output MUST be a JSON array of objects, each matching the structure:
+      {
+        "title": "string",
+        "price": "string",
+        "bedrooms": number,
+        "bathrooms": number,
+        "location": "string",
+        "source": "string",
+        "url": "string"
+      }
       Do not add any commentary or introductory text before or after the JSON list.
     `;
 
     console.log("Calling Gemini API with gemini-1.0-pro...");
     const model = ai.getGenerativeModel({
-      model: "gemini-1.0-pro", // This should now work
+      model: "gemini-1.0-pro",
       generationConfig: {
         responseMimeType: "application/json",
-        responseSchema: schema // No 'as any' needed after update and for correct schema structure
+        // REMOVED: responseSchema is no longer a direct property of GenerationConfig
       }
     });
     const geminiResponse = await model.generateContent(prompt);
