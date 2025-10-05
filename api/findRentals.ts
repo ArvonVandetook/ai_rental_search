@@ -38,14 +38,15 @@ export default async function handler(request: VercelRequest, response: VercelRe
     // Filter and present only models relevant to text generation and containing "gemini" or "bison"
     const relevantModels = modelsData.models
       .filter((model: any) => {
-        // Ensure model, name, and supportedMethods exist before processing
-        if (!model || !model.name || !model.supportedMethods) {
-          console.warn("Skipping malformed model entry:", model);
+        // Ensure model, name, and supportedGenerationMethods exist before processing
+        if (!model || !model.name || !model.supportedGenerationMethods) {
+          console.warn("Skipping malformed or incomplete model entry:", model);
           return false;
         }
 
         const isGeminiOrBison = model.name.includes("gemini") || model.name.includes("bison");
-        const supportsGeneration = model.supportedMethods.includes("generateContent") || model.supportedMethods.includes("generateText");
+        // Check for 'generateContent' OR 'generateText' in the correct property
+        const supportsGeneration = model.supportedGenerationMethods.includes("generateContent") || model.supportedGenerationMethods.includes("generateText");
 
         return isGeminiOrBison && supportsGeneration;
       })
@@ -53,7 +54,8 @@ export default async function handler(request: VercelRequest, response: VercelRe
         name: model.name,
         displayName: model.displayName,
         version: model.version,
-        supportedMethods: model.supportedMethods,
+        // Use supportedGenerationMethods here too for consistency if we display it
+        supportedMethods: model.supportedGenerationMethods,
         inputTokenLimit: model.inputTokenLimit,
         outputTokenLimit: model.outputTokenLimit,
       }));
