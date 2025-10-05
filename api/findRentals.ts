@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
+// Define the schema for the AI's response to ensure consistent JSON output.
 const schema = {
   type: "array",
   items: {
@@ -34,29 +35,10 @@ export default async function handler(request: VercelRequest, response: VercelRe
     }
     console.log("API key check passed.");
 
-    const ai = new GoogleGenerativeAI(process.env.API_KEY as string);
-
-    // --- REVISED DEBUGGING CODE START ---
-    console.log("Attempting to list available models...");
-    try {
-      // Cast 'ai' to 'any' to bypass strict TypeScript checking for listModels for debugging
-      const { models } = await (ai as any).listModels();
-      console.log("Successfully listed models:");
-      for (const model of models) {
-        // Ensure supportedGenerationMethods is checked for existence before calling includes
-        const supportsGenerateContent = model.supportedGenerationMethods?.includes('generateContent') || false;
-        console.log(`- ${model.name} (supports generateContent: ${supportsGenerateContent})`);
-      }
-    } catch (listError) {
-      console.error("Failed to list models. This indicates a fundamental API key or connection issue:", listError);
-      return response.status(500).json({ message: `Failed to list models: ${listError instanceof Error ? listError.message : String(listError)}` });
-    }
-    console.log("Finished listing models.");
-    // --- REVISED DEBUGGING CODE END ---
-
-
     const criteria = request.body;
     console.log("Received criteria:", criteria);
+
+    const ai = new GoogleGenerativeAI(process.env.API_KEY as string);
 
     const housingTypeClause = criteria.housingType === 'any' ? '' : ` The housing type should be a ${criteria.housingType}.`;
 
@@ -75,10 +57,10 @@ export default async function handler(request: VercelRequest, response: VercelRe
 
     console.log("Calling Gemini API with gemini-1.0-pro...");
     const model = ai.getGenerativeModel({
-      model: "gemini-1.0-pro",
+      model: "gemini-1.0-pro", // This should now work
       generationConfig: {
         responseMimeType: "application/json",
-        responseSchema: schema as any
+        responseSchema: schema // No 'as any' needed after update and for correct schema structure
       }
     });
     const geminiResponse = await model.generateContent(prompt);
