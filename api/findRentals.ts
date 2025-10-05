@@ -1,27 +1,25 @@
-import { GoogleGenerativeAI } from "@google/generative-ai"; // Removed 'Type' as it's not exported this way
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 // Define the schema for the AI's response to ensure consistent JSON output.
 const schema = {
-  type: "array", // Corrected: "array" as a string literal
+  type: "array",
   items: {
-    type: "object", // Corrected: "object" as a string literal
+    type: "object",
     properties: {
-      title: { type: "string" }, // Corrected: "string" as a string literal
-      price: { type: "string" }, // Corrected: "string" as a string literal
-      bedrooms: { type: "number" }, // Corrected: "number" as a string literal
-      bathrooms: { type: "number" }, // Corrected: "number" as a string literal
-      location: { type: "string" }, // Corrected: "string" as a string literal
-      source: { type: "string" }, // Corrected: "string" as a string literal
-      url: { type: "string" }, // Corrected: "string" as a string literal
+      title: { type: "string" },
+      price: { type: "string" }, // Keeping as string for now, as price can be formatted "$1,200"
+      bedrooms: { type: "number" }, // Corrected to "number"
+      bathrooms: { type: "number" }, // Corrected to "number"
+      location: { type: "string" },
+      source: { type: "string" },
+      url: { type: "string" },
     },
     required: ['title', 'price', 'bedrooms', 'bathrooms', 'location', 'source', 'url'],
   },
 };
 
 export default async function handler(request: VercelRequest, response: VercelResponse) {
-  // Wrap the entire function body in a try-catch block to guarantee a JSON error response,
-  // preventing silent crashes from timeouts or initialization errors.
   try {
     console.log("Serverless function started.");
 
@@ -58,7 +56,15 @@ export default async function handler(request: VercelRequest, response: VercelRe
     `;
 
     console.log("Calling Gemini API...");
-    const model = ai.getGenerativeModel({ model: "gemini-1.5-flash", generationConfig: { responseMimeType: "application/json", responseSchema: schema } });
+    // The key here is to cast the schema to 'any' or specifically match the SDK's expected type.
+    // Let's try casting to `any` first to see if it bypasses the type checker.
+    const model = ai.getGenerativeModel({
+      model: "gemini-1.5-flash",
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema: schema as any // <-- Add 'as any' here temporarily
+      }
+    });
     const geminiResponse = await model.generateContent(prompt);
     console.log("Gemini API call successful.");
 
