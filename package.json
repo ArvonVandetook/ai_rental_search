@@ -1,6 +1,7 @@
 {
   "name": "ai-rental-finder",
   "version": "1.0.0",
+  "type": "module",
   "private": true,
   "dependencies": {
     "@google/genai": "^1.21.0",
