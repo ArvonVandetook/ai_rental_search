@@ -34,7 +34,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
     if (!process.env.API_KEY) {
       console.error("API_KEY not found in environment variables.");
       return response.status(500).json({ message: "Server configuration error: The API_KEY environment variable is not set. Please check your Vercel project settings." });
-    }
+    }}
     console.log("API key check passed.");
 
     const criteria = request.body;
