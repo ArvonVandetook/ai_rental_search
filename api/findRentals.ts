@@ -71,7 +71,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
       Do not add any commentary or introductory text before or after the JSON list.
     `;
 
-    const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent?key=${process.env.API_KEY}`;
+    const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.API_KEY}`;
     // If gemini-1.0-pro continues to fail with direct fetch, we can try 'gemini-pro' here as well.
 
     console.log("Calling Gemini API directly via fetch with gemini-1.0-pro...");
