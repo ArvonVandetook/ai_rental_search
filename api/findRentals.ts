@@ -1,16 +1,15 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// Define the schema for the AI's response to ensure consistent JSON output.
 const schema = {
   type: "array",
   items: {
     type: "object",
     properties: {
       title: { type: "string" },
-      price: { type: "string" }, // Keeping as string for now, as price can be formatted "$1,200"
-      bedrooms: { type: "number" }, // Corrected to "number"
-      bathrooms: { type: "number" }, // Corrected to "number"
+      price: { type: "string" },
+      bedrooms: { type: "number" },
+      bathrooms: { type: "number" },
       location: { type: "string" },
       source: { type: "string" },
       url: { type: "string" },
@@ -35,10 +34,28 @@ export default async function handler(request: VercelRequest, response: VercelRe
     }
     console.log("API key check passed.");
 
+    const ai = new GoogleGenerativeAI(process.env.API_KEY as string);
+
+    // --- NEW DEBUGGING CODE START ---
+    console.log("Attempting to list available models...");
+    try {
+      const { models } = await ai.listModels();
+      console.log("Successfully listed models:");
+      for (const model of models) {
+        console.log(`- ${model.name} (supports generateContent: ${model.supportedGenerationMethods?.includes('generateContent')})`);
+      }
+      // If listModels works, but generateContent fails, we'll need to examine the logs closely.
+      // If listModels also fails, then the API_KEY or basic connection is the problem.
+    } catch (listError) {
+      console.error("Failed to list models. This indicates a fundamental API key or connection issue:", listError);
+      return response.status(500).json({ message: `Failed to list models: ${listError instanceof Error ? listError.message : String(listError)}` });
+    }
+    console.log("Finished listing models.");
+    // --- NEW DEBUGGING CODE END ---
+
+
     const criteria = request.body;
     console.log("Received criteria:", criteria);
-
-    const ai = new GoogleGenerativeAI(process.env.API_KEY as string);
 
     const housingTypeClause = criteria.housingType === 'any' ? '' : ` The housing type should be a ${criteria.housingType}.`;
 
@@ -55,14 +72,12 @@ export default async function handler(request: VercelRequest, response: VercelRe
       Do not add any commentary or introductory text before or after the JSON list.
     `;
 
-    console.log("Calling Gemini API...");
-    // The key here is to cast the schema to 'any' or specifically match the SDK's expected type.
-    // Let's try casting to `any` first to see if it bypasses the type checker.
+    console.log("Calling Gemini API with gemini-1.0-pro...");
     const model = ai.getGenerativeModel({
-      model: "gemini-1.0-pro",
+      model: "gemini-1.0-pro", // Keep this for now, we'll confirm its availability
       generationConfig: {
         responseMimeType: "application/json",
-        responseSchema: schema as any // <-- Add 'as any' here temporarily
+        responseSchema: schema as any
       }
     });
     const geminiResponse = await model.generateContent(prompt);
