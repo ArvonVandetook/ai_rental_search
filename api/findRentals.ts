@@ -70,32 +70,32 @@ export default async function handler(request: VercelRequest, response: VercelRe
     
 // ... (previous code)
 
-68 });
-69
-70 console.log("Gemini API call successful.");
-71 // FIX: Removed unnecessary markdown stripping. With `responseMimeType: "application/json"`
-72 // and a `responseSchema`, the API should return a clean JSON string, making this
-73 // defensive code redundant. The outer try/catch block will handle any parsing errors.
-74
-75 try { // This try block starts here
-76   const responseContent = geminiResponse.text; // Assign to a temporary variable
+});
 
-77   if (!responseContent) { // Check if it's undefined
-78     console.error("Gemini response text was empty or undefined.");
-79     // You can throw an error here to catch it in the outer block,
-80     // or return an appropriate response for an empty AI reply.
-81     return response.status(500).json({ message: "AI did not return any text content." });
-82   }
-83
-84   const jsonText = responseContent.trim(); // Now safely trim it
-85   const properties = JSON.parse(jsonText);
-86
-87   console.log("SUCCESSFULLY parsed properties. Sending response.");
-88   return response.status(200).json(properties);
-89
-90 } catch (error) { // This is the catch block that handles parsing errors
-91   // This block will now catch ANY error, guaranteeing a useful response.
-92   console.error("[CRITICAL] Unhandled error in serverless function:", error);
-93   const errorMessage = error instanceof Error ? error.message : "An unknown internal server error occurred.";
-94   return response.status(500).json({ message: `The server encountered a critical error: ${errorMessage}` });
-95 }
+ console.log("Gemini API call successful.");
+ // FIX: Removed unnecessary markdown stripping. With `responseMimeType: "application/json"`
+ // and a `responseSchema`, the API should return a clean JSON string, making this
+ // defensive code redundant. The outer try/catch block will handle any parsing errors.
+
+ try { // This try block starts here
+   const responseContent = geminiResponse.text; // Assign to a temporary variable
+
+   if (!responseContent) { // Check if it's undefined
+     console.error("Gemini response text was empty or undefined.");
+     // You can throw an error here to catch it in the outer block,
+     // or return an appropriate response for an empty AI reply.
+     return response.status(500).json({ message: "AI did not return any text content." });
+   }
+
+   const jsonText = responseContent.trim(); // Now safely trim it
+   const properties = JSON.parse(jsonText);
+
+   console.log("SUCCESSFULLY parsed properties. Sending response.");
+   return response.status(200).json(properties);
+
+ } catch (error) { // This is the catch block that handles parsing errors
+   // This block will now catch ANY error, guaranteeing a useful response.
+   console.error("[CRITICAL] Unhandled error in serverless function:", error);
+   const errorMessage = error instanceof Error ? error.message : "An unknown internal server error occurred.";
+   return response.status(500).json({ message: `The server encountered a critical error: ${errorMessage}` });
+ }
