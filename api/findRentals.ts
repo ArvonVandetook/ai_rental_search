@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenerativeAI, Type } from "@google/generative-ai"; // Corrected import from GoogleGenAI to GoogleGenerativeAI
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 // Define the schema for the AI's response to ensure consistent JSON output.
@@ -34,13 +34,14 @@ export default async function handler(request: VercelRequest, response: VercelRe
     if (!process.env.API_KEY) {
       console.error("API_KEY not found in environment variables.");
       return response.status(500).json({ message: "Server configuration error: The API_KEY environment variable is not set. Please check your Vercel project settings." });
-    }}
+    } // CORRECTED: Removed extra '}' here.
     console.log("API key check passed.");
 
     const criteria = request.body;
     console.log("Received criteria:", criteria);
 
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+    // Corrected import: GoogleGenerativeAI instead of GoogleGenAI
+    const ai = new GoogleGenerativeAI(process.env.API_KEY as string); // API key is passed directly to the constructor
 
     const housingTypeClause = criteria.housingType === 'any' ? '' : ` The housing type should be a ${criteria.housingType}.`;
 
@@ -58,46 +59,30 @@ export default async function handler(request: VercelRequest, response: VercelRe
     `;
 
     console.log("Calling Gemini API...");
-    const geminiResponse = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: schema,
-      },
-    });
+    const model = ai.getGenerativeModel({ model: "gemini-1.5-flash", generationConfig: { responseMimeType: "application/json", responseSchema: schema } }); // Updated model usage
+    const geminiResponse = await model.generateContent(prompt); // Removed 'contents' property, passed prompt directly
     console.log("Gemini API call successful.");
-    
-// ... (previous code)
 
+    // Removed the nested try block, relying on the outer try-catch for robustness.
+    // Also applied the nullish coalescing operator for 'text' property.
+    const responseContent = geminiResponse.text ?? '';
 
- console.log("Gemini API call successful.");
- // FIX: Removed unnecessary markdown stripping. With `responseMimeType: "application/json"`
- // and a `responseSchema`, the API should return a clean JSON string, making this
- // defensive code redundant. The outer try/catch block will handle any parsing errors.
+    if (!responseContent) { // Check if it's undefined or empty
+      console.error("Gemini response text was empty or undefined.");
+      return response.status(500).json({ message: "AI did not return any text content." });
+    }
 
- try { // This try block starts here
-   const responseContent = geminiResponse.text; // Assign to a temporary variable
+    const jsonText = responseContent.trim(); // Now safely trim it
+    const properties = JSON.parse(jsonText);
+    console.log("Parsed Properties:", JSON.stringify(properties, null, 2));
+    console.log("First Property URL:", properties.length > 0 ? properties[0].url : "No properties found or no URL property on first.");
 
-   if (!responseContent) { // Check if it's undefined
-     console.error("Gemini response text was empty or undefined.");
-     // You can throw an error here to catch it in the outer block,
-     // or return an appropriate response for an empty AI reply.
-     return response.status(500).json({ message: "AI did not return any text content." });
-   
+    console.log("SUCCESSFULLY parsed properties. Sending response.");
+    return response.status(200).json(properties);
 
-   const jsonText = responseContent.trim(); // Now safely trim it
-   const properties = JSON.parse(jsonText);
-   console.log("Parsed Properties:", JSON.stringify(properties, null, 2));
-   console.log("First Property URL:", properties.length > 0 ? properties[0].url : "No properties found or no URL property on first.");
-
-   console.log("SUCCESSFULLY parsed properties. Sending response.");
-   return response.status(200).json(properties);
-   }
-   catch (error) { // This is the catch block that handles parsing errors
-   // This block will now catch ANY error, guaranteeing a useful response.
-   console.error("[CRITICAL] Unhandled error in serverless function:", error);
-   const errorMessage = error instanceof Error ? error.message : "An unknown internal server error occurred.";
-   return response.status(500).json({ message: `The server encountered a critical error: ${errorMessage}` });
- }
- }
+  } catch (error) { // This is the catch block for the entire function
+    console.error("[CRITICAL] Unhandled error in serverless function:", error);
+    const errorMessage = error instanceof Error ? error.message : "An unknown internal server error occurred.";
+    return response.status(500).json({ message: `The server encountered a critical error: ${errorMessage}` });
+  }
+}
