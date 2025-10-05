@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI, Type } from "@google/generative-ai"; // Corrected import from GoogleGenAI to GoogleGenerativeAI
+import { Type } from "@google/generative-ai/server";
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 // Define the schema for the AI's response to ensure consistent JSON output.
@@ -65,7 +66,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
 
     // Removed the nested try block, relying on the outer try-catch for robustness.
     // Also applied the nullish coalescing operator for 'text' property.
-    const responseContent = geminiResponse.text ?? '';
+    const responseContent = await geminiResponse.response.text() ?? '';
 
     if (!responseContent) { // Check if it's undefined or empty
       console.error("Gemini response text was empty or undefined.");
