@@ -1,7 +1,6 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// Define the schema for the AI's response to ensure consistent JSON output.
+// Define the schema for the AI's response (kept for reference, not directly used in fetch)
 const schema = {
   type: "array",
   items: {
@@ -35,32 +34,21 @@ export default async function handler(request: VercelRequest, response: VercelRe
     }
     console.log("API key check passed.");
 
-    // Define criteria here, before the listModels block
     const criteria = request.body;
     console.log("Received criteria:", criteria);
 
-    const ai = new GoogleGenerativeAI(process.env.API_KEY as string);
-
-    // --- TEMPORARY ADDITION: LIST AVAILABLE MODELS (using 'as any' and ensuring scope) ---
-    console.log("Attempting to list available Generative AI models using 'as any' to bypass TypeScript build error...");
-    let modelsList;
-    try {
-        // Use the existing 'ai' instance
-        const { models } = await (ai as any).listModels();
-        modelsList = models.map((model: any) => ({
-            name: model.name,
-            supportedMethods: model.supportedGenerationMethods,
-            version: model.version
-        }));
-        console.log("Available Models:", JSON.stringify(modelsList, null, 2));
-    } catch (listError) {
-        console.error("Error listing models at runtime (this means the method might genuinely not exist):", listError);
-    }
-    // --- END TEMPORARY ADDITION ---
+    // --- Removed listModels attempt as it's not working ---
+    // console.log("Attempting to list available Generative AI models...");
+    // try {
+    //     // ... (removed)
+    // } catch (listError) {
+    //     console.error("Error listing models at runtime (method might genuinely not exist):", listError);
+    // }
+    // --- END Removed temporary addition ---
 
     const housingTypeClause = criteria.housingType === 'any' ? '' : ` The housing type should be a ${criteria.housingType}.`;
 
-    const prompt = `
+    const promptText = `
       Generate a list of up to 10 fictional, but realistic, rental properties that match the following criteria.
       The data should be plausible for the requested location.
       - Location: ${criteria.location}
@@ -83,17 +71,44 @@ export default async function handler(request: VercelRequest, response: VercelRe
       Do not add any commentary or introductory text before or after the JSON list.
     `;
 
-    console.log("Calling Gemini API with gemini-1.0-pro...");
-    const model = ai.getGenerativeModel({
-      model: "text-bison-001",
-      generationConfig: {
-        responseMimeType: "application/json",
-      }
-    });
-    const geminiResponse = await model.generateContent(prompt);
-    console.log("Gemini API call successful.");
+    const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent?key=${process.env.API_KEY}`;
+    // If gemini-1.0-pro continues to fail with direct fetch, we can try 'gemini-pro' here as well.
 
-    const responseContent = await geminiResponse.response.text() ?? '';
+    console.log("Calling Gemini API directly via fetch with gemini-1.0-pro...");
+    const fetchResponse = await fetch(GEMINI_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: promptText
+          }]
+        }],
+        generationConfig: {
+          responseMimeType: "application/json",
+        }
+      }),
+    });
+
+    if (!fetchResponse.ok) {
+      const errorBody = await fetchResponse.text();
+      console.error("Gemini API fetch failed:", fetchResponse.status, fetchResponse.statusText, errorBody);
+      // Attempt to parse error as JSON if possible, otherwise return raw text
+      let parsedError = errorBody;
+      try {
+        parsedError = JSON.parse(errorBody);
+      } catch (e) {
+        // Not JSON, keep as text
+      }
+      throw new Error(`Gemini API Error (${fetchResponse.status}): ${JSON.stringify(parsedError)}`);
+    }
+
+    const geminiData = await fetchResponse.json();
+    console.log("Gemini API direct call successful. Raw response:", JSON.stringify(geminiData, null, 2));
+
+    const responseContent = geminiData.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
 
     if (!responseContent) {
       console.error("Gemini response text was empty or undefined.");
