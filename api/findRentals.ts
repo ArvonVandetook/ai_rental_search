@@ -85,7 +85,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
 
     console.log("Calling Gemini API with gemini-1.0-pro...");
     const model = ai.getGenerativeModel({
-      model: "gemini-1.0-pro",
+      model: "text-bison-001",
       generationConfig: {
         responseMimeType: "application/json",
       }
