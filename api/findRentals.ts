@@ -37,10 +37,18 @@ export default async function handler(request: VercelRequest, response: VercelRe
 
     // Filter and present only models relevant to text generation and containing "gemini" or "bison"
     const relevantModels = modelsData.models
-      .filter((model: any) =>
-        (model.name.includes("gemini") || model.name.includes("bison")) &&
-        (model.supportedMethods.includes("generateContent") || model.supportedMethods.includes("generateText"))
-      )
+      .filter((model: any) => {
+        // Ensure model, name, and supportedMethods exist before processing
+        if (!model || !model.name || !model.supportedMethods) {
+          console.warn("Skipping malformed model entry:", model);
+          return false;
+        }
+
+        const isGeminiOrBison = model.name.includes("gemini") || model.name.includes("bison");
+        const supportsGeneration = model.supportedMethods.includes("generateContent") || model.supportedMethods.includes("generateText");
+
+        return isGeminiOrBison && supportsGeneration;
+      })
       .map((model: any) => ({
         name: model.name,
         displayName: model.displayName,
@@ -48,7 +56,6 @@ export default async function handler(request: VercelRequest, response: VercelRe
         supportedMethods: model.supportedMethods,
         inputTokenLimit: model.inputTokenLimit,
         outputTokenLimit: model.outputTokenLimit,
-        // Add more fields if desired, but keep it concise
       }));
 
     console.log("Filtered relevant models:", JSON.stringify(relevantModels, null, 2)); // Log filtered output
