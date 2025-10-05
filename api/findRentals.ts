@@ -93,10 +93,11 @@ export default async function handler(request: VercelRequest, response: VercelRe
 
    console.log("SUCCESSFULLY parsed properties. Sending response.");
    return response.status(200).json(properties);
-
- } catch (error) { // This is the catch block that handles parsing errors
+   }
+   catch (error) { // This is the catch block that handles parsing errors
    // This block will now catch ANY error, guaranteeing a useful response.
    console.error("[CRITICAL] Unhandled error in serverless function:", error);
    const errorMessage = error instanceof Error ? error.message : "An unknown internal server error occurred.";
    return response.status(500).json({ message: `The server encountered a critical error: ${errorMessage}` });
+ }
  }
