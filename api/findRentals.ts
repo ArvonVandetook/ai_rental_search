@@ -1,20 +1,19 @@
 import { GoogleGenerativeAI, Type } from "@google/generative-ai"; // Corrected import from GoogleGenAI to GoogleGenerativeAI
-import { Type } from "@google/generative-ai/server";
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 // Define the schema for the AI's response to ensure consistent JSON output.
 const schema = {
-  type: Type.ARRAY,
+  type: array,
   items: {
-    type: Type.OBJECT,
+    type: object,
     properties: {
-      title: { type: Type.STRING },
-      price: { type: Type.STRING },
-      bedrooms: { type: Type.NUMBER },
-      bathrooms: { type: Type.NUMBER },
-      location: { type: Type.STRING },
-      source: { type: Type.STRING },
-      url: { type: Type.STRING },
+      title: { type: string },
+      price: { type: string },
+      bedrooms: { type: number },
+      bathrooms: { type: number },
+      location: { type: string },
+      source: { type: string },
+      url: { type: string },
     },
     required: ['title', 'price', 'bedrooms', 'bathrooms', 'location', 'source', 'url'],
   },
