@@ -88,6 +88,8 @@ export default async function handler(request: VercelRequest, response: VercelRe
 
    const jsonText = responseContent.trim(); // Now safely trim it
    const properties = JSON.parse(jsonText);
+   console.log("Parsed Properties:", JSON.stringify(properties, null, 2));
+   console.log("First Property URL:", properties.length > 0 ? properties[0].url : "No properties found or no URL property on first.");
 
    console.log("SUCCESSFULLY parsed properties. Sending response.");
    return response.status(200).json(properties);
