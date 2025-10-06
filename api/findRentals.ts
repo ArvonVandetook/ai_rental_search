@@ -1,3 +1,16 @@
+It's clear, valid JSON, exactly what we asked for. The `finishReason` is now `"STOP"`, which means it completed its thought process and generated a full response.
+
+**The problem now is that Gemini has wrapped the JSON in Markdown code block delimiters (` ```json ` at the start and ` ``` ` at the end).**
+
+This means when your `geminiService.ts` tries to do `JSON.parse(generatedText)`, it's trying to parse a string that *starts with* ````json\n```` and *ends with* ````\n````, which is not valid JSON. That's why it's still hitting the `catch (parseError)` block and showing the placeholder.
+
+**The Fix:**
+
+We need to modify your `api/findRentals.ts` to strip these Markdown code block delimiters before sending the `generatedText` back to your frontend.
+
+Here's how to update your `api/findRentals.ts` file:
+
+```typescript
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 export default async function handler(request: VercelRequest, response: VercelResponse) {
@@ -36,10 +49,10 @@ export default async function handler(request: VercelRequest, response: VercelRe
         }]
       }],
       generationConfig: {
-        temperature: 0.7, // Adjust as needed for creativity vs. consistency
+        temperature: 0.7,
         topP: 0.95,
         topK: 60,
-        maxOutputTokens: 8192, // Adjust based on expected response length
+        maxOutputTokens: 8192, // Now using the increased token limit
       },
       safetySettings: [
         {
@@ -85,11 +98,20 @@ export default async function handler(request: VercelRequest, response: VercelRe
     const geminiData = await geminiResponse.json();
     console.log("Gemini API call successful. Raw response:", JSON.stringify(geminiData, null, 2));
 
-    // Extract the generated text (assuming it's in a specific format)
-    const generatedText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || "No content generated.";
-    console.log("Generated text:", generatedText);
+    // Extract the generated text
+    let generatedText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || "No content generated.";
+    
+    // --- NEW LOGIC ADDED HERE ---
+    // Strip markdown code block delimiters if present
+    if (generatedText.startsWith('```json\n') && generatedText.endsWith('\n```')) {
+      generatedText = generatedText.substring('```json\n'.length, generatedText.length - '\n```'.length);
+      console.log("Stripped markdown from generated text.");
+    }
+    // --- END NEW LOGIC ---
 
-    // Send the generated text back to the client
+    console.log("Generated text (after processing):", generatedText); // Updated log message
+
+    // Send the processed generated text back to the client
     return response.status(200).json({ generatedText });
 
   } catch (error) {
