@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 export default async function handler(request: VercelRequest, response: VercelResponse) {
   try {
-    console.log("Serverless function started for ListModels (filtered).");
+    console.log("Serverless function 'findRentals' started.");
 
     if (!process.env.API_KEY) {
       console.error("API_KEY not found in environment variables.");
@@ -10,62 +10,90 @@ export default async function handler(request: VercelRequest, response: VercelRe
     }
     console.log("API key check passed.");
 
-    const LIST_MODELS_API_URL = `https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.API_KEY}`;
+    // Ensure the request method is POST
+    if (request.method !== 'POST') {
+      console.warn(`Method Not Allowed: ${request.method}`);
+      return response.status(405).json({ message: 'Method Not Allowed. This endpoint only supports POST requests.' });
+    }
 
-    console.log("Calling Google Generative Language API ListModels...");
-    const fetchResponse = await fetch(LIST_MODELS_API_URL, {
-      method: 'GET',
+    // Extract the prompt from the request body
+    const { prompt } = request.body;
+
+    if (!prompt) {
+      console.warn("Missing 'prompt' in request body.");
+      return response.status(400).json({ message: "Bad Request: 'prompt' is required in the request body." });
+    }
+    console.log("Received prompt:", prompt);
+
+    // --- Configuration for Gemini API call ---
+    const MODEL_NAME = "models/gemini-2.5-pro"; // Using the newly identified model
+    const GENERATE_CONTENT_API_URL = `https://generativelanguage.googleapis.com/v1beta/${MODEL_NAME}:generateContent?key=${process.env.API_KEY}`;
+
+    const requestPayload = {
+      contents: [{
+        parts: [{
+          text: prompt
+        }]
+      }],
+      generationConfig: {
+        temperature: 0.7, // Adjust as needed for creativity vs. consistency
+        topP: 0.95,
+        topK: 60,
+        maxOutputTokens: 1024, // Adjust based on expected response length
+      },
+      safetySettings: [
+        {
+          category: "HARM_CATEGORY_HARASSMENT",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE"
+        },
+        {
+          category: "HARM_CATEGORY_HATE_SPEECH",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE"
+        },
+        {
+          category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE"
+        },
+        {
+          category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE"
+        },
+      ],
+    };
+
+    console.log(`Calling Gemini API (${MODEL_NAME})...`);
+    const geminiResponse = await fetch(GENERATE_CONTENT_API_URL, {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify(requestPayload),
     });
 
-    if (!fetchResponse.ok) {
-      const errorBody = await fetchResponse.text();
-      console.error("ListModels API fetch failed:", fetchResponse.status, fetchResponse.statusText, errorBody);
+    if (!geminiResponse.ok) {
+      const errorBody = await geminiResponse.text();
+      console.error(`Gemini API call failed for ${MODEL_NAME}:`, geminiResponse.status, geminiResponse.statusText, errorBody);
       let parsedError = errorBody;
       try {
         parsedError = JSON.parse(errorBody);
       } catch (e) {
         // Not JSON, keep as text
       }
-      throw new Error(`ListModels API Error (${fetchResponse.status}): ${JSON.stringify(parsedError)}`);
+      throw new Error(`Gemini API Error (${geminiResponse.status}): ${JSON.stringify(parsedError)}`);
     }
 
-    const modelsData = await fetchResponse.json();
-    console.log("ListModels API direct call successful. Raw response received (will be filtered)."); // Don't log full raw here
+    const geminiData = await geminiResponse.json();
+    console.log("Gemini API call successful. Raw response:", JSON.stringify(geminiData, null, 2));
 
-    // Filter and present only models relevant to text generation and containing "gemini" or "bison"
-    const relevantModels = modelsData.models
-      .filter((model: any) => {
-        // Ensure model, name, and supportedGenerationMethods exist before processing
-        if (!model || !model.name || !model.supportedGenerationMethods) {
-          console.warn("Skipping malformed or incomplete model entry:", model);
-          return false;
-        }
+    // Extract the generated text (assuming it's in a specific format)
+    const generatedText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || "No content generated.";
+    console.log("Generated text:", generatedText);
 
-        const isGeminiOrBison = model.name.includes("gemini") || model.name.includes("bison");
-        // Check for 'generateContent' OR 'generateText' in the correct property
-        const supportsGeneration = model.supportedGenerationMethods.includes("generateContent") || model.supportedGenerationMethods.includes("generateText");
-
-        return isGeminiOrBison && supportsGeneration;
-      })
-      .map((model: any) => ({
-        name: model.name,
-        displayName: model.displayName,
-        version: model.version,
-        // Use supportedGenerationMethods here too for consistency if we display it
-        supportedMethods: model.supportedGenerationMethods,
-        inputTokenLimit: model.inputTokenLimit,
-        outputTokenLimit: model.outputTokenLimit,
-      }));
-
-    console.log("Filtered relevant models:", JSON.stringify(relevantModels, null, 2)); // Log filtered output
-    console.log("SUCCESSFULLY listed and filtered models. Sending response.");
-    return response.status(200).json(relevantModels);
+    // Send the generated text back to the client
+    return response.status(200).json({ generatedText });
 
   } catch (error) {
-    console.error("[CRITICAL] Unhandled error in serverless function:", error);
+    console.error("[CRITICAL] Unhandled error in 'findRentals' serverless function:", error);
     const errorMessage = error instanceof Error ? error.message : "An unknown internal server error occurred.";
     return response.status(500).json({ message: `The server encountered a critical error: ${errorMessage}` });
   }
