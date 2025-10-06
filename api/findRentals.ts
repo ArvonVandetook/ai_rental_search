@@ -39,7 +39,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
         temperature: 0.7, // Adjust as needed for creativity vs. consistency
         topP: 0.95,
         topK: 60,
-        maxOutputTokens: 1024, // Adjust based on expected response length
+        maxOutputTokens: 8192, // Adjust based on expected response length
       },
       safetySettings: [
         {
